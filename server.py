@@ -15,12 +15,11 @@ class server():
             self.threads['server'][conn] = threading.Thread(target=self.openSocket, kwargs={'conn' : conn, sock_type:sock_type})
         else:
             print sock_type
-            self.threads['server'][conn] = threading.Thread(target=self.openFile, kwargs={'conn' : conn, sock_type:sock_type})
+            self.threads['server'][conn] = threading.Thread(target=self.openFile, args=(conn,sock_type))
         
         #daemonize and then start the thread
         self.threads['server'][conn].daemon=True
         self.threads['server'][conn].start()
-    
     
     def openSocket(self, conn=('127.0.0.1',65535), sock_type='tcp/ip', buf=4096, backlog=5, **kwargs):
         if sock_type == "tcp/ip":
