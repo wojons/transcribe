@@ -1,4 +1,5 @@
 import random, time, os, sys, threading, signal
+import multiprocessing
 
 class listenerBase():
 
@@ -22,7 +23,8 @@ class listenerBase():
         if kwargs.has_key('name') == False:
             kwargs['name'] = self.randomName()
         
-        self.threads['listeners'][kwargs['name']] = threading.Thread(target=self.handle, kwargs=kwargs)
+        #self.threads['listeners'][kwargs['name']] = threading.Thread(target=self.handle, kwargs=kwargs)
+        self.threads['listeners'][kwargs['name']] = multiprocessing.Process(target=self.handle, kwargs=kwargs)
         self.threads['listeners'][kwargs['name']].daemon=True
         self.threads['listeners'][kwargs['name']].start()
     

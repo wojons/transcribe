@@ -22,6 +22,7 @@ class listenerServer(helpers.listenerBase.listenerBase):
         elif sock_type == "udp/unix":
             self.s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind(conn)
         self.s.listen(backlog)
         while 1: #keep waiting for new connections
@@ -34,13 +35,13 @@ class listenerServer(helpers.listenerBase.listenerBase):
         try:
             socketName = socket.gethostbyaddr(addr[0])[0]
         except socket.herror, e:
-            sys.stderr.write(str(e)+": "+addr[0])
+            sys.stderr.write(str(e)+": "+addr[0]+"\n")
             socketName = addr[0]
         while 1: #keep reading until the end
             try:
                 line = socketfile.readline().strip("\n")
                 if line != "":
-                    logLine = "%d %s %s" % (time.time(), socketName, line)
+                    #logLine = "%d %s %s" % (time.time(), socketName, line)
                     #print logLine
                     #client.send('< '+logLine+"\n> ")
                     worker.queue_line(line, {'time':time.time(), 'socket_name':socketName})
@@ -81,6 +82,7 @@ class listenerFile(helpers.listenerBase.listenerBase):
     def handle(self, path, worker, **kwargs):
         self.hostname = socket.gethostname()
         with open(path) as tailFile:
+            tailFile.seek(0, os.SEEK_END)
             while 1:
                 line = tailFile.readline().strip("\n")
                 logLine = "%d %s %s" % (time.time(), self.hostname, line)
@@ -92,9 +94,10 @@ class listenerFile(helpers.listenerBase.listenerBase):
         sys.exit()
 
 if __name__=="__main__":
-    w = worker(pool_size=1, queue_size=1000000).run()
+    w = worker(pool_size=3, queue_size=2000000).run()
     s = listenerServer().mkInstance(conn=('0.0.0.0', 4000), worker=w, listen_type='tcp/ip')
     f = listenerFile().mkInstance(path='/tmp/fifo', worker=w, listen_type='file')
+    l = listenerFile().mkInstance(path='/var/log/syslog', worker=w, listen_type='file')
     
     while 1:
         time.sleep(10)
